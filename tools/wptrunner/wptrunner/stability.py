@@ -21,6 +21,11 @@ from wpt.markdown import markdown_adjust, table
 FLAKY_THRESHOLD = 0.8
 
 
+# TODO: Pass in an option for this, and use its existence to
+# decide whether or not to write to the output file.
+TASKCLUSTER_OUTPUT_FILE = "/home/test/artifacts/checkrun.md"
+
+
 class LogActionFilter(BaseHandler):
 
     """Handler that filters out messages not of a given set of actions.
@@ -337,14 +342,31 @@ def check_stability(logger, repeat_loop=10, repeat_restart=5, chaos_mode=True, m
 
         if inconsistent:
             step_results.append((desc, "FAIL"))
+
+            if os.getenv("TASKCLUSTER_ROOT_URL"):
+                handler = logging.FileHandler(TASKCLUSTER_OUTPUT_FILE)
+                logger.addHandler(handler)
+
             write_inconsistent(logger.info, inconsistent, iterations)
             write_summary(logger, step_results, "FAIL")
+
+            if os.getenv("TASKCLUSTER_ROOT_URL"):
+                logger.removeHandler(handler)
             return 1
 
         if slow:
             step_results.append((desc, "FAIL"))
+
+            if os.getenv("TASKCLUSTER_ROOT_URL"):
+                handler = logging.FileHandler(TASKCLUSTER_OUTPUT_FILE)
+                logger.addHandler(handler)
+
             write_slow_tests(logger.info, slow)
             write_summary(logger, step_results, "FAIL")
+
+            if os.getenv("TASKCLUSTER_ROOT_URL"):
+                logger.removeHandler(handler)
+
             return 1
 
         step_results.append((desc, "PASS"))
