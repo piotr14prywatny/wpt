@@ -184,16 +184,17 @@ def err_string(results_dict, iterations):
     return rv
 
 
-def write_inconsistent(log, inconsistent, iterations):
-    """Output inconsistent tests to logger.error."""
-    log("## Unstable results ##\n")
-    strings = [(
-        "`%s`" % markdown_adjust(test),
-        ("`%s`" % markdown_adjust(subtest)) if subtest else "",
-        err_string(results, iterations),
-        ("`%s`" % markdown_adjust(";".join(messages))) if len(messages) else "")
-        for test, subtest, results, messages in inconsistent]
-    table(["Test", "Subtest", "Results", "Messages"], strings, log)
+def write_inconsistent(log_fns, inconsistent, iterations):
+    """Output inconsistent tests to passed in logging functions."""
+    for log in log_fns:
+        log("## Unstable results ##\n")
+        strings = [(
+            "`%s`" % markdown_adjust(test),
+            ("`%s`" % markdown_adjust(subtest)) if subtest else "",
+            err_string(results, iterations),
+            ("`%s`" % markdown_adjust(";".join(messages))) if len(messages) else "")
+            for test, subtest, results, messages in inconsistent]
+        table(["Test", "Subtest", "Results", "Messages"], strings, log)
 
 
 def write_slow_tests(log, slow):
@@ -343,16 +344,11 @@ def check_stability(logger, repeat_loop=10, repeat_restart=5, chaos_mode=True, m
 
         if inconsistent:
             step_results.append((desc, "FAIL"))
-
+            log_fns = [logger.info]
             if os.getenv("TASKCLUSTER_ROOT_URL"):
-                handler = logging.FileHandler(TASKCLUSTER_OUTPUT_FILE)
-                logger.add_handler(handler)
-
-            write_inconsistent(logger.info, inconsistent, iterations)
+                log_fns.append(get_taskcluster_logger().info)
+            write_inconsistent(log_fns, inconsistent, iterations)
             write_summary(logger, step_results, "FAIL")
-
-            if os.getenv("TASKCLUSTER_ROOT_URL"):
-                logger.remove_handler(handler)
             return 1
 
         if slow:
@@ -373,3 +369,13 @@ def check_stability(logger, repeat_loop=10, repeat_restart=5, chaos_mode=True, m
         step_results.append((desc, "PASS"))
 
     write_summary(logger, step_results, "PASS")
+
+
+# TODO: Move this to a utility location.
+tc_logger = None
+def get_taskcluster_logger():
+    global tc_logger
+    if tc_logger is None:
+        tc_logger = logging.getLogger("taskcluster-logger")
+        tc_logger.addHandler(logging.FileHandler(TASKCLUSTER_OUTPUT_FILE))
+    return tc_logger
