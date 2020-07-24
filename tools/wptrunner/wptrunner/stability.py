@@ -346,13 +346,13 @@ def check_stability(logger, repeat_loop=10, repeat_restart=5, chaos_mode=True, m
 
             if os.getenv("TASKCLUSTER_ROOT_URL"):
                 handler = logging.FileHandler(TASKCLUSTER_OUTPUT_FILE)
-                logger.addHandler(handler)
+                logger.add_handler(handler)
 
             write_inconsistent(logger.info, inconsistent, iterations)
             write_summary(logger, step_results, "FAIL")
 
             if os.getenv("TASKCLUSTER_ROOT_URL"):
-                logger.removeHandler(handler)
+                logger.remove_handler(handler)
             return 1
 
         if slow:
