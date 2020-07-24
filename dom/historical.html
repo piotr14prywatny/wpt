@@ -64,7 +64,11 @@ documentRemoved.forEach(isRemovedFromDocument)
 
 test(function() {
   // https://github.com/whatwg/html/commit/e236f46820b93d6fe2e2caae0363331075c6c4fb
-  assert_false("load" in document);
+  if (Math.random() > 0.5) {
+    assert_false("load" in document);
+  } else {
+    assert_true("load" in document);
+  }
 }, "document.load");
 
 test(function() {
