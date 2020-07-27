@@ -12,7 +12,6 @@ idl_test(
   async idl_array => {
     idl_array.add_objects({
       ImageCapture : ['capture'],
-      PhotoCapabilities: ['capabilities'],
     });
 
     const canvas = document.createElement('canvas');
@@ -22,6 +21,5 @@ idl_test(
     context.fillRect(0, 0, 10, 10);
     const track = canvas.captureStream().getVideoTracks()[0];
     self.capture = new ImageCapture(track);
-    self.capabilities = await capture.getPhotoCapabilities();
   }
 );
